@@ -37,6 +37,15 @@ class Usuario{
 		$this->dtcadastro = $value;
 	}
 
+	/*metodo para setar dados*/
+	public function setData($data){
+
+		$this->setIdusuario($data['idusuario']);
+		$this->setDeslogin($data['deslogin']);
+		$this->setDessenha($data['dessenha']);
+		$this->setDtcadastro(new DateTime($data['dtcadastro']));
+	}
+
 
 /*Retorna um usuario*/
 	public function loadById($id){
@@ -48,12 +57,7 @@ class Usuario{
 
 		if(count($results) > 0){
 
-			$row = $results[0];
-
-			$this->setIdusuario($row['idusuario']);
-			$this->setDeslogin($row['deslogin']);
-			$this->setDessenha($row['dessenha']);
-			$this->setDtcadastro(new DateTime($row['dtcadastro']));
+			$this->setData($results[0]);
 		}
 	}
 
@@ -73,7 +77,33 @@ class Usuario{
 
 
 
+
+/* insert no banco e retorna id*/
+	public function insert(){
+
+		$sql = new Sql();
+
+		$results = $sql->select("CALL sp_usuarios_insert(:LOGIN, :PASSWORD)", array(
+			':LOGIN'=>$this->getDeslogin(),
+			':PASSWORD'=>$this->getDessenha()
+	));
+
+		if(count($results) > 0){
+			$this->setData($results[0]);
+		}
+	}
+
+/* metodo construtor*/
+public function __construct($login = "", $senha = ""){
+
+	$this->setDeslogin($login);
+	$this->setDessenha($senha);
+}
+
+
+// carrega um usuario usando o login e a senha
 	public function login($login, $password){
+		
 		$sql = new Sql();
 
 		$results = $sql->select("SELECT * FROM tb_usuario WHERE deslogin = :LOGIN AND dessenha = :PASSWORD", array(
@@ -82,20 +112,34 @@ class Usuario{
 		));
 		if(count($results) > 0){
 
-			$row = $results[0];
+			$this->setData($results[0]);
 
-			$this->setIdusuario($row['idusuario']);
-			$this->setDeslogin($row['deslogin']);
-			$this->setDessenha($row['dessenha']);
-			$this->setDtcadastro(new DateTime($row['dtcadastro']));
 		} else {
 			throw new Exception("Login e/ou senha invalidos");
 			
 		}
 	}
 
-/*Transforma o objeto em strin*/
+	/*update*/
+
+	public function update($login, $senha){
+		$sql =  new Sql();
+
+			$this->setDeslogin($login);
+			$this->setDessenha($senha);
+
+		$sql->query("UPDATE tb_usuario SET deslogin = :LOGIN, dessenha = :PASSWORD WHERE idusuario = :ID", array(
+			':LOGIN'=>$this->getDeslogin(),
+			':PASSWORD'=>$this->getDessenha(),
+			':ID'=>$this->getIdusuario()
+		));
+	}
+
+
+
+/*Transforma o objeto em string*/
 	public function __toString(){
+
 		return json_encode(array( 
 			"idusuario"=>$this->getIdusuario(),
 			"deslogin"=>$this->getDeslogin(),
